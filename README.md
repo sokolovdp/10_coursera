@@ -1,6 +1,11 @@
 # Coursera Dump
 
-[TODO. There will be project description]
+coursera.py loads information about courses from Coursera xml-feed 
+and saves short information into excel file "courses_info.xlsx"
+
+# usage sample
+
+python coursera.py
 
 # Project Goals
 
