@@ -31,7 +31,7 @@ def get_course_info(course_url):
         language = soup.find('div', attrs={'class': 'rc-Language'}).text
         duration = len(soup.find_all('div', attrs={'class': 'week-heading body-2-text'}))
         rating = soup.find_all('div', attrs={'class': 'ratings-text headline-2-text'})
-        if rating is not None:
+        if rating:  # check if rating is not empty [list]
             rating = rating[0].contents[0].text
         else:
             rating = "No rating yet"
@@ -53,7 +53,7 @@ def main(filename, number_courses):
     print("loaded info about {} courses".format(len(courses_urls)))
     courses_info = [get_course_info(url) for url in courses_urls[:number_courses]]
     output_courses_info_to_xlsx(courses_info, filename)
-    print("info {} courses saved in {}".format(number_courses, filename))
+    print("info for {} courses saved in {}".format(number_courses, filename))
 
 
 if __name__ == '__main__':
