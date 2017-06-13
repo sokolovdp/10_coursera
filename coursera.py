@@ -7,25 +7,37 @@ from bs4 import BeautifulSoup
 import pandas as pd
 
 
-def get_html_from_url(url_full):
+class HTML:
+    def __init__(self, html, err):
+        self.html = html
+        self.err = err
+        self.ok = (self.html is not None)
+
+
+def get_html_from_url(url_full: "str") -> "HTML":
     try:
         response = urllib.request.urlopen(url_full)
-        return response.read()
-    except urllib.error.URLError as e:
-        print("open page error:", e.reason)
+        return HTML(response.read(), None)
+    except urllib.error.URLError as e1:
+        return HTML(None, e1.reason)
+    except Exception as e2:
+        return HTML(None, e2.reason)
 
 
 def get_courses_list():
-    html = get_html_from_url("https://www.coursera.org/sitemap~www~courses.xml")
-    if html is not None:
-        soup = BeautifulSoup(html, "lxml")
+    page = get_html_from_url("https://www.coursera.org/sitemap~www~courses.xml")
+    if page.ok:
+        soup = BeautifulSoup(page.html, "lxml")
         return [url_full.text for url_full in soup.find_all('loc')]
+    else:
+        print("can't load list of courses, error {}".format(page.err))
+        exit()
 
 
 def get_course_info(course_url):
-    html = get_html_from_url(course_url)
-    if html is not None:
-        soup = BeautifulSoup(html, "lxml")
+    page = get_html_from_url(course_url)
+    if page.ok:
+        soup = BeautifulSoup(page.html, "lxml")
         title = soup.find('meta', attrs={'property': 'og:title'}).attrs['content'].replace(" | Coursera", "")
         start_date = soup.find('div', attrs={'class': 'startdate rc-StartDateString caption-text'}).text
         language = soup.find('div', attrs={'class': 'rc-Language'}).text
@@ -34,15 +46,17 @@ def get_course_info(course_url):
         if rating:  # check if rating is not empty [list]
             rating = rating[0].contents[0].text
         else:
-            rating = "No rating yet"
+            rating = None
         return {'1_title': title, '2_date': start_date, '3_language': language, '4_weeks': duration, "5_rating": rating}
+    else:
+        print("can't load course page {}, error {}, info ignored".format(course_url, page.err))
 
 
 def output_courses_info_to_xlsx(courses_info, filename):
     book = Workbook()
     sheet = book.active
     sheet.title = "Coursera"
-    courses_dataframe = pd.DataFrame(courses_info)
+    courses_dataframe = pd.DataFrame(courses_info).fillna('-')  # replace all None values with '-'
     for row in dataframe_to_rows(courses_dataframe, index=True, header=True):
         sheet.append(row)
     book.save(filename=filename)
