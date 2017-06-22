@@ -43,7 +43,7 @@ def get_course_info(course_url):
 def output_courses_info_to_xlsx(courses_info, filename):
     book = Workbook()
     sheet = book.active
-    sheet.title = "Coursera"
+    sheet.title = "coursera"
     courses_dataframe = pd.DataFrame(courses_info).fillna('-')  # replace all None values with '-'
     for row in dataframe_to_rows(courses_dataframe, index=True, header=True):
         sheet.append(row)
