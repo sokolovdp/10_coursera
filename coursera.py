@@ -2,42 +2,30 @@ import argparse
 import sys
 from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
-import urllib.request
+import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 
 
-class HTML:
-    def __init__(self, html, err):
-        self.html = html
-        self.err = err
-        self.ok = (self.html is not None)
-
-
-def get_html_from_url(url_full: "str") -> "HTML":
-    try:
-        response = urllib.request.urlopen(url_full)
-        return HTML(response.read(), None)
-    except urllib.error.URLError as e1:
-        return HTML(None, e1.reason)
-    except Exception as e2:
-        return HTML(None, e2.reason)
+def get_html_from_url(url_full: "str") -> "dict":
+    response = requests.get(url_full)
+    if response.ok:
+        return {"html": response.text, "url": response.url, "err": None}
+    else:
+        return {"html": None, "url": None, "err": response.status_code}
 
 
 def get_courses_list():
     page = get_html_from_url("https://www.coursera.org/sitemap~www~courses.xml")
-    if page.ok:
-        soup = BeautifulSoup(page.html, "lxml")
+    if page['html']:
+        soup = BeautifulSoup(page['html'], "lxml")
         return [url_full.text for url_full in soup.find_all('loc')]
-    else:
-        print("can't load list of courses, error {}".format(page.err))
-        exit()
 
 
 def get_course_info(course_url):
     page = get_html_from_url(course_url)
-    if page.ok:
-        soup = BeautifulSoup(page.html, "lxml")
+    if page['html']:
+        soup = BeautifulSoup(page['html'], "lxml")
         title = soup.find('meta', attrs={'property': 'og:title'}).attrs['content'].replace(" | Coursera", "")
         start_date = soup.find('div', attrs={'class': 'startdate rc-StartDateString caption-text'}).text
         language = soup.find('div', attrs={'class': 'rc-Language'}).text
@@ -47,9 +35,9 @@ def get_course_info(course_url):
             rating = rating[0].contents[0].text
         else:
             rating = None
-        return {'1_title': title, '2_date': start_date, '3_language': language, '4_weeks': duration, "5_rating": rating}
+        return {'Title': title, 'Date': start_date, 'Language(s)': language, 'Weeks': duration, "Rating": rating}
     else:
-        print("can't load course page {}, error {}, info ignored".format(course_url, page.err))
+        print("can't load course page {}, error {}, info ignored".format(course_url, page['err']))
 
 
 def output_courses_info_to_xlsx(courses_info, filename):
