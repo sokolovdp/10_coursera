@@ -10,9 +10,9 @@ import pandas as pd
 def get_html_from_url(url_full: "str") -> "dict":
     response = requests.get(url_full)
     if response.ok:
-        return {"html": response.text, "url": response.url, "err": None}
+        return dict(html=response.text, url=response.url, err=None)
     else:
-        return {"html": None, "url": None, "err": response.status_code}
+        return dict(html=None, url=None, err=response.status_code)
 
 
 def get_courses_list():
